@@ -1,0 +1,50 @@
+service: api-places
+
+plugins:
+  - serverless-python-requirements
+  - serverless-wsgi
+  - serverless-domain-manager
+
+custom:
+  wsgi:
+    app: app.app
+    packRequirements: false
+  pythonRequirements:
+    dockerizePip: non-linux
+    usePipenv: false
+  domain:
+    dev: dev.api.places.denebtech.com.ar
+    prod: api.places.denebtech.com.ar
+  customDomain:
+    domainName: ${self:custom.domain.${opt:stage, 'dev'}}
+    basePath: ""
+    stage: ${self:provider.stage}
+    certificateName: ${self:custom.domain.${opt:stage, 'dev'}}
+    createRoute53Record: true
+
+provider:
+  name: aws
+  runtime: python3.9
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-2'}
+  logRetentionInDays: 14
+  environment:
+    MONGO_URI: "${ssm:/denebtech/api-places/${opt:stage,'dev'}/MONGO_URI}"
+    MONGO_DATABASE: "${ssm:/denebtech/api-places/${opt:stage,'dev'}/MONGO_DATABASE}"
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - "ssm:GetParameter"
+            - "ssm:GetParameters"
+            - "ssm:GetParametersByPath"
+            - "kms:Decrypt"
+          Resource: "arn:aws:ssm:${opt:region, 'us-east-2'}:*:parameter/denebtech/api-places/${opt:stage, 'dev'}/*"
+
+functions:
+  app:
+    handler: wsgi.handler
+    events:
+      - http: GET /
+      - http: 'GET /{proxy+}'
