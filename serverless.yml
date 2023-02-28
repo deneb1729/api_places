@@ -5,6 +5,16 @@ plugins:
   - serverless-wsgi
   - serverless-domain-manager
 
+package:
+ patterns:
+   - '!README.md'
+   - '!Pipfile*'
+   - '!compose.yml'
+   - '!Makefile'
+   - '!data/**'
+   - '!__pycache__/**'
+   - '!node_modules/**'
+
 custom:
   wsgi:
     app: app.app

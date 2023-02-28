@@ -2,6 +2,8 @@ from os import getenv
 import logging
 
 from flasgger import Swagger
+from flasgger import LazyString
+from flasgger import LazyJSONEncoder
 from flask import Flask
 from flask import request
 from flask import jsonify
@@ -10,7 +12,20 @@ from pymongo.errors import OperationFailure
 
 
 app = Flask(__name__)
-swagger = Swagger(app)
+# Set the custom Encoder (Inherit it if you need to customize)
+app.json_encoder = LazyJSONEncoder
+
+template = dict(
+    info={
+        'title': LazyString(lambda: 'API Places By denebtech'),
+        'version': LazyString(lambda: '1.0.0'),
+        'description': LazyString(lambda: 'Open API about different places in Argentina'),
+    },
+    host=LazyString(lambda: request.host),
+    schemes=[LazyString(lambda: 'https' if request.is_secure else 'http')]
+)
+
+swagger = Swagger(app, template=template)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
